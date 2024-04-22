@@ -7,7 +7,7 @@ app.get('/', (c) => {
 })
 
 app.get('/hello', (c) => {
-  return c.json({message : "hello"})
+  return c.json({message : "helloololo"})
 })
 
 export default app
