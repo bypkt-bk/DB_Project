@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Library {
+  library_id   Int      @id @unique
+  library_name String
+  books        Book[]
+  library_books Library_books[]
+}
+
+// Define the schema for genres
+model Genre {
+  genre_id    Int      @id @unique
+  genre_name  String
+  books       Book[]
+}
+
+// Define the schema for books
+model Book {
+  book_id      Int      @id @unique
+  title        String
+  author       String
+  quantity     Int
+  genre        Genre    @relation(fields: [genre_id], references: [genre_id])
+  genre_id     Int
+  library      Library  @relation(fields: [library_id], references: [library_id])
+  library_id   Int
+  loan          Loan[]
+  hold          Hold[]
+  library_books Library_books[]
+}
+
+// Define the schema for users
+model User {
+  user_id       Int      @id @unique
+  first_name    String
+  last_name     String
+  email         String
+  phone_number  String
+  loan          Loan[]
+  hold          Hold[]
+}
+
+// Define the schema for loans
+model Loan {
+  loan_id      Int      @id @unique
+  user         User     @relation(fields: [user_id], references: [user_id])
+  user_id      Int
+  book         Book     @relation(fields: [book_id], references: [book_id])
+  book_id      Int
+  loan_date    DateTime
+  due_date     DateTime
+  return_date  DateTime?
+  loan_status  String
+}
+
+// Define the schema for holds
+model Hold {
+  hold_id       Int      @id @unique
+  user          User     @relation(fields: [user_id], references: [user_id])
+  user_id       Int
+  book          Book     @relation(fields: [book_id], references: [book_id])
+  book_id       Int
+  hold_date     DateTime
+  release_date  DateTime?
+  status        String
+}
+
+// Define the schema for the 'library_books' table
+model Library_books {
+  lib_book_id   Int      @id @default(autoincrement())
+  library_id    Int
+  book_id       Int
+  libraries     Library   @relation(fields: [library_id], references: [library_id])
+  books         Book      @relation(fields: [book_id], references: [book_id])
+}
