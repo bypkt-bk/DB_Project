@@ -12,10 +12,17 @@ user.get("/", async (c) => {
 
 user.get('/search', async (c) =>{
     const name = c.req.query('name')
+    console.log(name)
     const result : User[] = await prisma.user.findMany({
         where : {  
-            first_name : {contains : name},
-            last_name : {contains : name}
+            OR:[
+                {
+                    first_name:{contains:name}
+                },
+                {
+                    last_name:{contains:name}
+                }
+            ]
         }
     })
     console.log(result)
