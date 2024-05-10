@@ -11,31 +11,70 @@ function a(x: number): number {
 const b = (x: number) => {
     return x + 1;
 }
-
 book.get("/", async (c) => {
-    const author = c.req.query('author');
-    const genre = c.req.query('genre');
-    const library = c.req.query('library');
-    const where = (author || genre || library) ? {
-        ...(author && { author : {contains: author}}),
-        ...(genre && { genre: { genre_name: genre } }),
-        ...(library && {library: {library_name: library}})
-      } : {};
+    const searchInput = c.req.query('search');
+    const filter = c.req.query('filter');
 
-      console.log(where)
+    let whereCondition: any = {
+        OR: [
+            { title: { contains: searchInput } },
+            { author: { contains: searchInput } },
+            { library: { library_name: { contains: searchInput } } },
+            { genre: { genre_name: { contains: searchInput } } }
+        ]
+    };
+
+    if (filter === 'title') {
+        whereCondition = {
+            title: { contains: searchInput }
+        } as any;
+    } else if (filter === 'author') {
+        whereCondition = {
+            author: { contains: searchInput }
+        } as any;
+    } else if (filter === 'genre') {
+        whereCondition = {
+            genre: { genre_name: { contains: searchInput } }
+        } as any;
+    } else if (filter === 'library') {
+        whereCondition = {
+            library: { library_name: { contains: searchInput } }
+        } as any;
+    }
+
     const result = await prisma.book.findMany({
-        where:where,
-        include:{
-            library:true
+        where: whereCondition,
+        include: {
+            library: true,
+            genre: true
         }
     });
     return c.json({ result });
 });
+// book.get("/", async (c) => {
+//     const author = c.req.query('author');
+//     const genre = c.req.query('genre');
+//     const library = c.req.query('library');
+//     const where = (author || genre || library) ? {
+//         ...(author && { author : {contains: author}}),
+//         ...(genre && { genre: { genre_name: genre } }),
+//         ...(library && {library: {library_name: library}})
+//       } : {};
 
-book.get("/count", async (c) => {
-    const count = await prisma.book.count();
-    return c.json({ count });
-});
+//       console.log(where)
+//     const result = await prisma.book.findMany({
+//         where:where,
+//         include:{
+//             library:true
+//         }
+//     });
+//     return c.json({ result });
+// });
+
+// book.get("/count", async (c) => {
+//     const count = await prisma.book.count();
+//     return c.json({ count });
+// });
 
 
 book.get("/:id", async (c) => {
@@ -51,16 +90,42 @@ book.get("/:id", async (c) => {
     return c.json({ result })
 });
 
+interface BookInput {
+    title: string;
+    author: string;
+    quantity: number;
+    genre_id: number;
+    library_id: number;
+}
 
 book.post("/", async (c) => {
-    const input: Book = await c.req.json();
+    const input: BookInput = await c.req.json();
+    const latestQuery = await prisma.book.findMany({
+        orderBy:[{
+            book_id:"desc"
+        }],
+        take: 1
+    });
+
+    const book_id = latestQuery[0].book_id;
 
     await prisma.book.create({
-        data: input
+        data: {
+            book_id:book_id + 1,
+            title: input.title,
+            author: input.author,
+            quantity: input.quantity,
+            genre_id: input.genre_id,
+            library_id: input.library_id
+
+              }
     });
 
     return c.text("Create success");
+
 });
+
+
 
 book.patch("/", async (c) => {
     const data = await c.req.json<Book>();
@@ -80,14 +145,28 @@ book.patch("/", async (c) => {
     return c.json({ message: "update success" });
 })
 
+// book.delete("/", async (c) => {
+//     const data = await c.req.json<Book>();
+//     await prisma.book.delete({
+//         where: {
+//             book_id: data.book_id,
+//         },
+//     });
+//     return c.json({ message: "Delete success" });
+// });
+interface BookInput_delete {
+    book_id: number;
+}
 book.delete("/", async (c) => {
-    const data = await c.req.json<Book>();
+    const input: BookInput_delete = await c.req.json();
     await prisma.book.delete({
-        where: {
-            book_id: data.book_id,
-        },
+        where:{
+            book_id: input.book_id
+        }
     });
-    return c.json({ message: "Delete success" });
+
+    return c.text("Create success");
+
 });
 
 
