@@ -17,6 +17,19 @@ library.post("/", async (c) => {
     return c.text("Create success");
 });
 
+library.get("/:id", async (c) => {
+    const libraryId = parseInt(c.req.param('id'));
+    const library = await prisma.library.findUnique({
+        where: {
+            library_id: libraryId
+        }
+    });
+    if (!library) {
+        return c.json({ error: 'library not found' }, 404);
+    }
+    return c.json({ library });
+});
+
 library.delete("/",async (c) =>{
     const data = await c.req.json<Library>();
     await prisma.library.delete({

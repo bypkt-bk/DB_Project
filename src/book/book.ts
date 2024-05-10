@@ -11,26 +11,67 @@ function a(x: number): number {
 const b = (x: number) => {
     return x + 1;
 }
-
 book.get("/", async (c) => {
-    const author = c.req.query('author');
-    const genre = c.req.query('genre');
-    const library = c.req.query('library');
-    const where = (author || genre || library) ? {
-        ...(author && { author : {contains: author}}),
-        ...(genre && { genre: { genre_name: genre } }),
-        ...(library && {library: {library_name: library}})
-      } : {};
+    const searchInput = c.req.query('search');
+    const filter = c.req.query('filter');
 
-      console.log(where)
+    let whereCondition: any = {
+        OR: [
+            { title: { contains: searchInput } },
+            { author: { contains: searchInput } },
+            { library: { library_name: { contains: searchInput } } },
+            { genre: { genre_name: { contains: searchInput } } }
+        ]
+    };
+
+    if (filter === 'title') {
+        whereCondition = {
+            title: { contains: searchInput }
+        } as any;
+    } else if (filter === 'author') {
+        whereCondition = {
+            author: { contains: searchInput }
+        } as any;
+    } else if (filter === 'genre') {
+        whereCondition = {
+            genre: { genre_name: { contains: searchInput } }
+        } as any;
+    } else if (filter === 'library') {
+        whereCondition = {
+            library: { library_name: { contains: searchInput } }
+        } as any;
+    }
+
     const result = await prisma.book.findMany({
-        where:where,
-        include:{
-            library:true
+        where: whereCondition,
+        include: {
+            library: true,
+            genre: true
         }
     });
     return c.json({ result });
 });
+
+book.get("/", async (c) => {
+    const searchInput = c.req.query('search');
+
+    const result = await prisma.book.findMany({
+        where: {
+            OR: [
+                { title: { contains: searchInput } },
+                { author: { contains: searchInput } },
+                { library: { library_name: { contains: searchInput } } },
+                { genre:{genre_name:{ contains:searchInput }}}
+            ]
+        },
+        include: {
+            library: true,
+            genre: true
+        }
+    });
+    return c.json({ result });
+});
+
 
 book.get("/count", async (c) => {
     const count = await prisma.book.count();

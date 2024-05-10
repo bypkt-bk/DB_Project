@@ -9,6 +9,20 @@ loan.get("/", async (c) => {
     return c.json({ result });
   });
 
+loan.get("/:id", async (c) => {
+    const loanId = parseInt(c.req.param('id'));
+    const loan = await prisma.loan.findUnique({
+        where: {
+            loan_id: loanId
+        }
+    });
+    if (!loan) {
+        return c.json({ error: 'Loan not found' }, 404);
+    }
+    return c.json({ loan });
+});
+
+  
 loan.post("/", async (c) => {
   const input: Loan = await c.req.json();
 

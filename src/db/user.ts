@@ -10,6 +10,18 @@ user.get("/", async (c) => {
     return c.json({ result });
   });
 
+  user.get("/:id", async (c) => {
+    const userId = parseInt(c.req.param('id'));
+    const user = await prisma.user.findUnique({
+        where: {
+            user_id: userId
+        }
+    });
+    if (!user) {
+        return c.json({ error: 'user not found' }, 404);
+    }
+    return c.json({ user });
+});
 user.get('/search', async (c) =>{
     const name = c.req.query('name')
     console.log(name)

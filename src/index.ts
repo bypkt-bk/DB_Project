@@ -1,5 +1,6 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Hono } from "hono";
+import { cors } from 'hono/cors'
 import user from "./db/user";
 import loan from "./db/loan";
 import hold from "./db/hold";
@@ -9,7 +10,9 @@ import library from "./library/library";
 import library_books from "./library_books/library_books";
 
 const app = new Hono();
-const prisma = new PrismaClient();
+
+app.use('/*', cors())
+
 
 app.get("/", (c) => {
   return c.text("hello");
