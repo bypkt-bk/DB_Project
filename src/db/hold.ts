@@ -14,7 +14,18 @@ hold.get("/", async (c) => {
     return c.json({ result });
   });
 
-
+  hold.get("/:id", async (c) => {
+    const holdId = parseInt(c.req.param('id'));
+    const hold = await prisma.hold.findUnique({
+        where: {
+          hold_id: holdId
+        }
+    });
+    if (!hold) {
+        return c.json({ error: 'hold not found' }, 404);
+    }
+    return c.json({ hold });
+});
 
 hold.post("/", async (c) => {
   const input: Hold = await c.req.json();

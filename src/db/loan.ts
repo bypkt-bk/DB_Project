@@ -9,6 +9,20 @@ loan.get("/", async (c) => {
     return c.json({ result });
   });
 
+loan.get("/:id", async (c) => {
+    const loanId = parseInt(c.req.param('id'));
+    const loan = await prisma.loan.findUnique({
+        where: {
+            loan_id: loanId
+        }
+    });
+    if (!loan) {
+        return c.json({ error: 'Loan not found' }, 404);
+    }
+    return c.json({ loan });
+});
+
+  
 loan.post("/", async (c) => {
   const input: Loan = await c.req.json();
 
@@ -21,20 +35,35 @@ loan.post("/", async (c) => {
   return c.text("Create success");
 });
 
-loan.patch("/update", async (c) =>{
-    const input : Loan = await c.req.json();
+loan.patch("/update/:id", async (c) => {
+  const loanId = parseInt(c.req.param('id')); // Extract loan ID from URL params
+  const input = await c.req.json();
 
-    const update_loan = await prisma.loan.update({
-        where :{
-            loan_id : input.loan_id
-        },
-        data : {
-            loan_status : input.loan_status
-        }
+  try {
+      const updatedLoan = await prisma.loan.update({
+          where: {
+              loan_id: loanId // Use loan ID to identify the loan record
+          },
+          data: {
+              // Check if each field is present in the input and update accordingly
+              ...(input.user_id && { user_id: input.user_id }),
+              ...(input.book_id && { book_id: input.book_id }),
+              ...(input.loan_date && { loan_date: input.loan_date }),
+              ...(input.due_date && { due_date: input.due_date }),
+              ...(input.return_date && { return_date: input.return_date }),
+              ...(input.loan_status && { loan_status: input.loan_status })
+              // Add other fields you want to update here
+          }
+      });
       
-    })
-    return c.json({result : "Update success"}, 200);
-})
+      return c.json({ result: "Update success", updatedLoan }, 200);
+  } catch (error) {
+      // Handle errors, e.g., record not found, database error, etc.
+      return c.json({ error: "Failed to update loan record" }, 500);
+  }
+});
+
+
 
 
 
