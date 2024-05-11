@@ -51,6 +51,15 @@ book.get("/", async (c) => {
     });
     return c.json({ result });
 });
+// book.get("/", async (c) => {
+//     const author = c.req.query('author');
+//     const genre = c.req.query('genre');
+//     const library = c.req.query('library');
+//     const where = (author || genre || library) ? {
+//         ...(author && { author : {contains: author}}),
+//         ...(genre && { genre: { genre_name: genre } }),
+//         ...(library && {library: {library_name: library}})
+//       } : {};
 
 book.get("/", async (c) => {
     const searchInput = c.req.query('search');
@@ -92,16 +101,42 @@ book.get("/:id", async (c) => {
     return c.json({ result })
 });
 
+interface BookInput {
+    title: string;
+    author: string;
+    quantity: number;
+    genre_id: number;
+    library_id: number;
+}
 
 book.post("/", async (c) => {
-    const input: Book = await c.req.json();
+    const input: BookInput = await c.req.json();
+    const latestQuery = await prisma.book.findMany({
+        orderBy:[{
+            book_id:"desc"
+        }],
+        take: 1
+    });
+
+    const book_id = latestQuery[0].book_id;
 
     await prisma.book.create({
-        data: input
+        data: {
+            book_id:book_id + 1,
+            title: input.title,
+            author: input.author,
+            quantity: input.quantity,
+            genre_id: input.genre_id,
+            library_id: input.library_id
+
+              }
     });
 
     return c.text("Create success");
+
 });
+
+
 
 book.patch("/", async (c) => {
     const data = await c.req.json<Book>();
@@ -121,14 +156,19 @@ book.patch("/", async (c) => {
     return c.json({ message: "update success" });
 })
 
+interface BookInput_delete {
+    book_id: number;
+}
 book.delete("/", async (c) => {
-    const data = await c.req.json<Book>();
+    const input: BookInput_delete = await c.req.json();
     await prisma.book.delete({
-        where: {
-            book_id: data.book_id,
-        },
+        where:{
+            book_id: input.book_id
+        }
     });
-    return c.json({ message: "Delete success" });
+
+    return c.text("Create success");
+
 });
 
 
